@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HSC 2026 Vote</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; }
+:root {
+  --bg: #0f0f1a;
+  --bg2: #1a1a2e;
+  --bg3: #16213e;
+  --card: #1e1e35;
+  --border: rgba(255,255,255,0.08);
+  --accent: #7c3aed;
+  --accent2: #a855f7;
+  --accent3: rgba(168,85,247,0.15);
+  --gold: #f59e0b;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --green: #10b981;
+  --red: #ef4444;
+  --shadow: 0 4px 20px rgba(0,0,0,0.4);
+  --shadow2: 0 2px 8px rgba(0,0,0,0.3);
+}
+.app { min-height: 100vh; background: var(--bg); color: var(--text); }
+.hidden { display: none !important; }
+
+/* ── NAV ── */
+.nav {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  box-shadow: var(--shadow2);
+  position: sticky; top: 0; z-index: 100;
+}
+.nav-logo { font-size: 16px; font-weight: 800; color: var(--accent); letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
+.nav-tabs { display: flex; gap: 4px; }
+.nav-tab { padding: 7px 16px; border-radius: 8px; border: none; background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.nav-tab:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+.nav-tab.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(124,58,237,0.4); }
+
+/* ── PAGES ── */
+.page { padding: 1.5rem; max-width: 680px; margin: 0 auto; }
+
+/* ── VOTE HEADER ── */
+.vote-header { text-align: center; margin-bottom: 1.75rem; padding: 1.5rem; background: linear-gradient(135deg, #7c3aed, #a855f7); border-radius: 18px; color: #fff; box-shadow: 0 6px 24px rgba(124,58,237,0.35); }
+.vote-header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+.vote-header p { font-size: 14px; margin-top: 5px; opacity: 0.85; }
+
+/* ── QUESTION CARD ── */
+.question-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
+.q-label { font-size: 11px; color: var(--accent); font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.q-text { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; line-height: 1.4; }
+.q-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 1.1rem; line-height: 1.5; font-style: italic; }
+.options-grid { display: flex; flex-direction: column; gap: 10px; }
+
+/* ── TIMER ── */
+.timer-wrap {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  background: rgba(245,158,11,0.12);
+  border: 1px solid rgba(245,158,11,0.4);
+  border-radius: 12px;
+  padding: 10px 18px;
+  margin-bottom: 1rem;
+  transition: all 0.3s;
+}
+.timer-wrap.urgent { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.5); animation: pulse-urgent 0.6s infinite alternate; }
+@keyframes pulse-urgent { from { transform: scale(1); } to { transform: scale(1.02); } }
+.timer-label { font-size: 13px; font-weight: 600; color: var(--gold); }
+.timer-wrap.urgent .timer-label { color: var(--red); }
+.timer-count { font-size: 26px; font-weight: 800; color: var(--gold); min-width: 40px; text-align: center; }
+.timer-wrap.urgent .timer-count { color: var(--red); }
+.timer-ring { position: relative; width: 44px; height: 44px; }
+.timer-ring svg { transform: rotate(-90deg); }
+.timer-ring circle { fill: none; stroke: rgba(245,158,11,0.2); stroke-width: 4; }
+.timer-ring .progress { stroke: var(--gold); stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+.timer-wrap.urgent .timer-ring .progress { stroke: var(--red); }
+
+/* ── VOTE CLOSED ── */
+.vote-closed-banner {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 18px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* ── OPTION BUTTONS ── */
+.option-btn {
+  width: 100%; text-align: left; padding: 14px 18px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 12px; color: var(--text); font-size: 14px;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+}
+.option-btn:hover:not(:disabled):not(.voted) { border-color: var(--accent2); background: rgba(168,85,247,0.1); transform: translateY(-1px); }
+.option-btn.selected { border-color: var(--accent); background: rgba(124,58,237,0.2); color: #c4b5fd; }
+.option-btn.voted { cursor: default; }
+.option-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+.option-btn .opt-label { font-weight: 600; font-size: 15px; }
+.vote-bar-row { display: flex; align-items: center; gap: 8px; width: 100%; }
+.vote-bar-wrap { flex: 1; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
+.vote-bar { height: 100%; border-radius: 4px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+.vote-pct { font-size: 12px; color: var(--muted); min-width: 36px; text-align: right; font-weight: 600; }
+
+/* ── SUBMIT / NEXT BUTTONS ── */
+.submit-btn {
+  width: 100%; padding: 14px;
+  background: var(--accent);
+  border: none; border-radius: 12px; color: #fff;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  transition: all 0.25s; margin-top: 0.75rem;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.3);
+}
+.submit-btn:hover { background: var(--accent2); transform: translateY(-1px); }
+.submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+.next-btn {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  border: none; border-radius: 12px; color: #fff;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  transition: all 0.25s; margin-top: 0.75rem;
+  box-shadow: 0 4px 14px rgba(16,185,129,0.3);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.next-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(16,185,129,0.4); }
+.voted-msg { text-align: center; color: var(--green); font-size: 14px; font-weight: 600; margin-top: 0.75rem; background: rgba(16,185,129,0.1); border-radius: 8px; padding: 10px; }
+
+/* ── RESULT ANIMATION ── */
+.result-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(15,15,30,0.7); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem;
+}
+.result-card {
+  background: var(--card); border-radius: 24px;
+  padding: 2rem; width: 100%; max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  border: 1px solid var(--border);
+}
+@keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.result-title { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 0.5rem; }
+.result-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 1.25rem; }.result-bars { display: flex; flex-direction: column; gap: 12px; margin-bottom: 1.25rem; }
+.r-bar-item { display: flex; flex-direction: column; gap: 5px; }
+.r-bar-label { font-size: 13px; font-weight: 600; color: var(--text); display: flex; justify-content: space-between; }
+.r-bar-track { height: 14px; background: rgba(255,255,255,0.08); border-radius: 7px; overflow: hidden; }
+.r-bar-fill { height: 100%; border-radius: 7px; width: 0%; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+.floating-bar {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; font-size: 13px; font-weight: 700;
+  padding: 6px 20px; border-radius: 20px;
+  box-shadow: 0 4px 14px rgba(99,102,241,0.4);
+  white-space: nowrap;
+  animation: floatUpDown 0.5s ease-in-out infinite alternate;
+}
+@keyframes floatUpDown { from { transform: translateX(-50%) translateY(0); } to { transform: translateX(-50%) translateY(-8px); } }
+.result-winner-row { background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(124,58,237,0.15)); border: 1px solid rgba(245,158,11,0.35); border-radius: 14px; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+.result-winner-trophy { font-size: 32px; }
+.result-winner-info h3 { font-size: 18px; font-weight: 800; color: var(--gold); }
+.result-winner-info p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.close-result-btn { width: 100%; padding: 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; color: var(--muted); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.close-result-btn:hover { background: rgba(168,85,247,0.1); color: var(--accent2); border-color: var(--accent2); }
+
+/* ── NO QUESTIONS ── */
+.no-questions { text-align: center; padding: 3rem 1.5rem; color: var(--muted); background: var(--card); border-radius: 18px; border: 1px dashed rgba(255,255,255,0.12); }
+.no-questions .no-icon { font-size: 40px; display: block; margin-bottom: 0.75rem; }
+
+/* ── LIVE CHART ── */
+.live-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.live-header h2 { font-size: 20px; font-weight: 800; color: var(--text); }
+.q-selector { background: var(--card); border: 2px solid var(--border); border-radius: 10px; color: var(--text); font-size: 13px; padding: 8px 12px; cursor: pointer; font-weight: 600; }
+.chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
+.chart-q-title { font-size: 15px; color: var(--text); font-weight: 600; margin-bottom: 1rem; }
+.bar-list { display: flex; flex-direction: column; gap: 14px; }
+.bar-item { display: flex; align-items: center; gap: 12px; }
+.bar-label { font-size: 13px; color: var(--text); min-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+.bar-track { flex: 1; height: 28px; background: rgba(255,255,255,0.05); border-radius: 8px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 8px; display: flex; align-items: center; padding-left: 8px; font-size: 12px; font-weight: 700; color: #fff; transition: width 0.9s cubic-bezier(0.4,0,0.2,1); }
+.bar-count { font-size: 12px; color: var(--muted); min-width: 52px; text-align: right; font-weight: 600; }
+.total-badge { display: inline-flex; align-items: center; gap: 4px; background: rgba(124,58,237,0.2); border: 1px solid rgba(168,85,247,0.3); border-radius: 20px; padding: 3px 12px; font-size: 12px; color: var(--accent2); font-weight: 700; }
+
+/* ── WINNER CARD ── */
+.winner-section { margin-top: 1.25rem; }
+.winner-label { font-size: 11px; color: var(--gold); font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.75rem; }
+.winner-card { background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(124,58,237,0.12)); border: 1px solid rgba(245,158,11,0.3); border-radius: 16px; padding: 1.25rem; display: flex; align-items: center; gap: 1rem; }
+.winner-avatar { width: 72px; height: 72px; border-radius: 50%; border: 3px solid var(--gold); background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; flex-shrink: 0; color: var(--text); overflow: hidden; }
+.winner-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.winner-info h3 { font-size: 18px; font-weight: 800; color: var(--gold); }
+.winner-info p { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.winner-votes { margin-top: 6px; font-size: 13px; color: var(--accent2); font-weight: 700; }
+
+/* ── ADMIN ── */
+.admin-login { max-width: 380px; margin: 3rem auto; background: var(--card); border-radius: 18px; padding: 2rem; box-shadow: var(--shadow); border: 1px solid var(--border); }
+.admin-login h2 { font-size: 20px; font-weight: 800; margin-bottom: 1.5rem; text-align: center; color: var(--text); }
+.field { margin-bottom: 1.1rem; }
+.field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 5px; letter-spacing: 0.8px; font-weight: 700; text-transform: uppercase; }
+.field input, .field textarea, .field select { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 14px; padding: 10px 14px; outline: none; transition: border 0.2s; resize: vertical; }
+.field input:focus, .field textarea:focus { border-color: var(--accent); background: var(--bg3); }
+.login-btn { width: 100%; padding: 13px; background: var(--accent); border: none; border-radius: 10px; color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; }
+.login-btn:hover { background: var(--accent2); }
+.err-msg { color: var(--red); font-size: 12px; text-align: center; margin-top: 8px; display: none; font-weight: 600; }
+.admin-panel h2 { font-size: 20px; font-weight: 800; margin-bottom: 1.25rem; }
+.section-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.25rem; }
+.section-card h3 { font-size: 13px; font-weight: 700; color: var(--accent2); margin-bottom: 1rem; letter-spacing: 1px; text-transform: uppercase; }
+.opt-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+.opt-row input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; padding: 8px 10px; }
+.opt-row input:focus { outline: none; border-color: var(--accent); }
+.add-opt-btn { background: transparent; border: 1px dashed rgba(168,85,247,0.4); border-radius: 8px; color: var(--accent2); font-size: 13px; font-weight: 600; padding: 8px 14px; cursor: pointer; width: 100%; margin-bottom: 0.75rem; transition: all 0.2s; }
+.add-opt-btn:hover { background: rgba(168,85,247,0.08); }
+.del-btn { background: transparent; border: none; color: var(--red); font-size: 20px; cursor: pointer; padding: 0 4px; opacity: 0.6; transition: opacity 0.2s; }
+.del-btn:hover { opacity: 1; }
+.action-btn { padding: 10px 18px; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-danger { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.btn-danger:hover { background: rgba(239,68,68,0.25); }
+.btn-success { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+.btn-success:hover { background: rgba(16,185,129,0.25); }
+.q-list-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.q-list-item .q-item-text { font-size: 13px; color: var(--text); flex: 1; font-weight: 500; }
+.q-item-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.q-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.active-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 5px; }
+.inactive-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; margin-right: 5px; }
+.student-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 0.75rem; }
+.student-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 10px; text-align: center; }
+.student-thumb { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: var(--bg2); margin: 0 auto 6px; display: block; }
+.student-name { font-size: 12px; color: var(--text); font-weight: 600; }
+.del-student { color: var(--red); font-size: 11px; cursor: pointer; margin-top: 4px; opacity: 0.7; }
+.del-student:hover { opacity: 1; }
+.status-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.badge-active { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+.badge-inactive { background: rgba(148,163,184,0.1); color: var(--muted); border: 1px solid var(--border); }
+.top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+.logout-btn { background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 12px; font-weight: 600; padding: 6px 14px; cursor: pointer; transition: all 0.2s; }
+.logout-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+.refresh-hint { font-size: 11px; color: var(--muted); text-align: center; margin-top: 0.5rem; }
+.section-tabs { display: flex; gap: 6px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.sec-tab { padding: 7px 16px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.sec-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.sec-tab:hover:not(.active) { background: rgba(255,255,255,0.06); color: var(--text); }
+.q-nav-row { display: flex; align-items: center; gap: 8px; margin-bottom: 0.75rem; }
+.q-nav-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.15); cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+.q-nav-dot.current { background: var(--accent2); transform: scale(1.3); }
+.q-nav-dot.answered { background: var(--green); }
+
+/* ── Q SUBTITLE ADMIN ── */
+.subtitle-field { margin-top: 6px; }
+.subtitle-field textarea { font-size: 13px; color: var(--muted); }
+
+/* ── PROGRESS BAR ── */
+.q-progress-bar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-bottom: 1rem; overflow: hidden; }
+.q-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width 0.4s ease; }
+
+/* ── MOBILE ── */
+@media (max-width: 600px) {
+  .nav { padding: 0 0.75rem; height: 52px; }
+  .nav-logo { font-size: 13px; }
+  .nav-tab { padding: 5px 9px; font-size: 11px; }
+  .page { padding: 0.85rem; }
+  .vote-header { padding: 1.1rem; border-radius: 14px; }
+  .vote-header h1 { font-size: 18px; }
+  .vote-header p { font-size: 12px; }
+  .question-card { padding: 1rem; border-radius: 14px; }
+  .q-text { font-size: 15px; }
+  .q-subtitle { font-size: 12px; }
+  .option-btn { padding: 11px 12px; border-radius: 10px; }
+  .option-btn .opt-label { font-size: 13px; }
+  .bar-label { min-width: 80px; font-size: 11px; }
+  .bar-track { height: 22px; }
+  .section-tabs { flex-wrap: wrap; gap: 4px; }
+  .sec-tab { padding: 6px 10px; font-size: 11px; }
+  .result-overlay { padding: 1rem; }
+  .result-card { padding: 1.25rem; border-radius: 18px; }
+  .result-title { font-size: 15px; }
+  .result-subtitle { font-size: 12px; }
+  .admin-login { margin: 1rem auto; padding: 1.5rem; border-radius: 14px; }
+  .admin-login h2 { font-size: 17px; }
+  .timer-count { font-size: 20px; }
+  .timer-wrap { padding: 8px 14px; gap: 8px; }
+  .timer-label { font-size: 12px; }
+  .student-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  .submit-btn, .next-btn { padding: 12px; font-size: 14px; }
+  .q-list-item { flex-direction: column; gap: 8px; }
+  .q-actions { width: 100%; justify-content: flex-end; }
+  .winner-card { gap: 0.75rem; padding: 1rem; }
+  .winner-avatar { width: 56px; height: 56px; font-size: 20px; }
+  .winner-info h3 { font-size: 15px; }
+  .section-card { padding: 1.1rem; border-radius: 12px; }
+  .chart-card { padding: 1.1rem; border-radius: 14px; }
+  .result-winner-row { padding: 0.85rem 1rem; gap: 10px; }
+  .floating-bar { font-size: 12px; padding: 5px 14px; }
+}
+
+@media (max-width: 380px) {
+  .nav-tab { padding: 5px 7px; font-size: 10px; }
+  .nav-logo { font-size: 12px; }
+  .vote-header h1 { font-size: 16px; }
+  .q-text { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="nav">
+    <span class="nav-logo">⚡ HSC 2026 Vote</span>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('vote')">Vote</button>
+      <button class="nav-tab" onclick="showPage('live')">Live Results</button>
+      <button class="nav-tab" onclick="showPage('admin')">Admin</button>
+    </div>
+  </div>
+
+  <!-- VOTE PAGE -->
+  <div id="page-vote" class="page">
+    <div class="vote-header">
+      <h1>🎓 HSC Batch 2026</h1>
+      <p>Cast your vote — one question at a time</p>
+    </div>
+    <div id="vote-content"></div>
+  </div>
+
+  <!-- LIVE PAGE -->
+  <div id="page-live" class="page hidden">
+    <div class="live-header">
+      <h2>📊 Live Results</h2>
+      <select class="q-selector" id="live-q-select" onchange="renderLive()"></select>
+    </div>
+    <div id="live-content"></div>
+  </div>
+
+  <!-- ADMIN PAGE -->
+  <div id="page-admin" class="page hidden">
+    <div id="admin-login-wrap">
+      <div class="admin-login">
+        <h2>🔐 Admin Login</h2>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="pw-input" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')doLogin()"/>
+        </div>
+        <button class="login-btn" onclick="doLogin()">Login</button>
+        <p class="err-msg" id="login-err">Incorrect password</p>
+        <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:12px">Default: <code style="color:var(--accent);font-weight:700">hsc2026</code></p>
+      </div>
+    </div>
+    <div id="admin-panel-wrap" class="hidden">
+      <div class="top-bar">
+        <h2>Admin Panel</h2>
+        <button class="logout-btn" onclick="doLogout()">Logout</button>
+      </div>
+      <div class="section-tabs">
+        <button class="sec-tab active" onclick="showAdminSection('questions')">Questions</button>
+        <button class="sec-tab" onclick="showAdminSection('students')">Students</button>
+        <button class="sec-tab" onclick="showAdminSection('settings')">Settings</button>
+      </div>
+      <div id="admin-questions" class="admin-section">
+        <div class="section-card">
+          <h3>Add New Question</h3>
+          <div class="field">
+            <label>Question Text</label>
+            <textarea id="new-q-text" rows="2" placeholder="e.g. Who is the ghost — comes for exams but not for class?"></textarea>
+          </div>
+          <div class="field subtitle-field">
+            <label>Subtitle / Explanation (optional)</label>
+            <textarea id="new-q-subtitle" rows="2" placeholder="e.g. We all know at least one person who disappears between exams..."></textarea>
+          </div>
+          <div class="field">
+            <label>Timer Duration (seconds)</label>
+            <select id="new-q-timer" style="width:100%;background:var(--bg3);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;padding:10px 14px;outline:none">
+              <option value="10">10 seconds</option>
+              <option value="12">12 seconds</option>
+              <option value="15" selected>15 seconds</option>
+            </select>
+          </div>
+          <div id="options-container"></div>
+          <button class="add-opt-btn" onclick="addOptionField()">+ Add Option</button>
+          <button class="action-btn btn-primary" onclick="saveQuestion()">Save Question</button>
+        </div>
+        <div class="section-card">
+          <h3>All Questions</h3>
+          <div id="q-list"></div>
+        </div>
+      </div>
+      <div id="admin-students" class="admin-section hidden">
+        <div class="section-card">
+          <h3>Add Student (Winner Profile)</h3>
+          <div class="field">
+            <label>Student Name</label>
+            <input type="text" id="new-s-name" placeholder="e.g. Rahim Uddin"/>
+          </div>
+          <div class="field">
+            <label>Photo URL (optional)</label>
+            <input type="text" id="new-s-photo" placeholder="https://..."/>
+          </div>
+          <button class="action-btn btn-primary" onclick="saveStudent()">Add Student</button>
+        </div>
+        <div class="section-card">
+          <h3>Student Roster</h3>
+          <div id="student-grid-admin" class="student-grid"></div>
+        </div>
+      </div>
+      <div id="admin-settings" class="admin-section hidden">
+        <div class="section-card">
+          <h3>Change Password</h3>
+          <div class="field">
+            <label>New Password</label>
+            <input type="password" id="new-pw" placeholder="Enter new password"/>
+          </div>
+          <button class="action-btn btn-primary" onclick="changePassword()">Update Password</button>
+        </div>
+        <div class="section-card">
+          <h3>Danger Zone</h3>
+          <button class="action-btn btn-danger" onclick="clearAllVotes()">Clear All Votes</button>
+          &nbsp;
+          <button class="action-btn btn-danger" onclick="clearAllData()">Reset Everything</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT OVERLAY -->
+<div class="result-overlay hidden" id="result-overlay">
+  <div class="result-card" id="result-card">
+    <div id="result-floating-wrap" style="position:relative;height:44px;margin-bottom:1rem">
+      <div class="floating-bar" id="floating-bar">📊 Counting votes...</div>
+    </div>
+    <div class="result-title" id="result-title">Results</div>
+    <div class="result-subtitle" id="result-subtitle"></div>
+    <div class="result-bars" id="result-bars"></div>
+    <div id="result-winner-wrap"></div>
+    <button class="close-result-btn" onclick="closeResult()">✓ Close Results</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const COLORS = ['#6366f1','#a855f7','#ec4899','#f59e0b','#059669','#3b82f6','#ef4444','#14b8a6'];
+const DATA_KEY = 'hsc_portal_data';
+let state = { questions:[], students:[], votes:{}, settings:{ password:'hsc2026' } };
+let loggedIn = false;
+let optionCount = 0;
+let currentQIndex = 0; // which question the user is on in the vote page
+let timerInterval = null;
+let timerSeconds = 0;
+let votingOpen = false;
+
+async function loadState() {
+  try { const r = await window.storage.get(DATA_KEY); if(r&&r.value) state = JSON.parse(r.value); } catch(e){}
+}
+async function saveState() {
+  try { await window.storage.set(DATA_KEY, JSON.stringify(state)); } catch(e){}
+}
+
+function showPage(p) {
+  ['vote','live','admin'].forEach(x => {
+    document.getElementById('page-'+x).classList.toggle('hidden', x!==p);
+  });
+  document.querySelectorAll('.nav-tab').forEach((t,i) => {
+    t.classList.toggle('active', ['vote','live','admin'][i]===p);
+  });
+  if(p==='vote') renderVote();
+  if(p==='live') renderLiveInit();
+  if(p==='admin' && loggedIn) renderAdmin();
+}
+
+/* ─── VOTE ─── */
+function getActiveQs() { return state.questions.filter(q=>q.active); }
+function getUserVote(qid) { try { return localStorage.getItem('voted_'+qid); } catch(e){ return null; } }
+function setUserVote(qid, opt) { try { localStorage.setItem('voted_'+qid, opt); } catch(e){} }
+
+function renderVote() {
+  const cont = document.getElementById('vote-content');
+  const activeQs = getActiveQs();
+  if(!activeQs.length) {
+    if(timerInterval) clearInterval(timerInterval);
+    cont.innerHTML = `<div class="no-questions"><span class="no-icon">🗳️</span><p style="font-size:17px;font-weight:700;color:var(--text)">No active question</p><p style="font-size:13px;margin-top:6px">The admin hasn't posted a question yet. Check back soon!</p></div>`;
+    return;
+  }
+  if(currentQIndex >= activeQs.length) currentQIndex = 0;
+  const q = activeQs[currentQIndex];
+  const totalActive = activeQs.length;
+  const votes = state.votes[q.id]||{};
+  const total = Object.values(votes).reduce((a,b)=>a+b,0);
+  const myVote = getUserVote(q.id);
+  const voted = !!myVote;
+
+  // dots nav
+  const dotsHTML = activeQs.map((aq,i) => {
+    const cls = i===currentQIndex ? 'current' : (getUserVote(aq.id) ? 'answered' : '');
+    return `<div class="q-nav-dot ${cls}" title="Q${i+1}" onclick="goToQ(${i})"></div>`;
+  }).join('');
+  const progressPct = totalActive > 1 ? Math.round((currentQIndex / (totalActive-1)) * 100) : 100;
+
+  let optHTML = q.options.map((opt,i) => {
+    const cnt = votes[opt]||0;
+    const pct = total>0 ? Math.round(cnt/total*100) : 0;
+    const sel = myVote===opt ? 'selected' : '';
+    const barStyle = (voted || !votingOpen && !voted) ? '' : 'display:none';
+    const showBars = voted;
+    return `<button class="option-btn ${sel} ${voted?'voted':''}" 
+      onclick="${voted||(!votingOpen)?'':'selectOpt('+JSON.stringify(opt)+')'}"
+      ${voted||(!votingOpen && !voted) ? 'disabled' : ''}
+      style="${(!votingOpen && !voted)?'opacity:0.55;cursor:not-allowed':''}">
+      <span class="opt-label">${myVote===opt?'✓ ':''}<span>${opt}</span></span>
+      ${showBars ? `<div class="vote-bar-row"><div class="vote-bar-wrap"><div class="vote-bar" style="width:${pct}%;background:${COLORS[i%COLORS.length]}"></div></div><span class="vote-pct">${pct}%</span></div>` : ''}
+    </button>`;
+  }).join('');
+
+  const timerDur = q.timerDuration || 15;
+
+  cont.innerHTML = `
+    ${totalActive > 1 ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+        <div class="q-nav-row" style="gap:8px;margin-bottom:0">${dotsHTML}</div>
+        <span style="font-size:12px;color:var(--muted);font-weight:600">Q${currentQIndex+1} of ${totalActive}</span>
+      </div>
+      <div class="q-progress-bar"><div class="q-progress-fill" style="width:${progressPct}%"></div></div>
+    ` : ''}
+    <div class="question-card">
+      <div class="q-label">Question ${currentQIndex+1}</div>
+      <div class="q-text">${q.text}</div>
+      ${q.subtitle ? `<div class="q-subtitle">ℹ️ ${q.subtitle}</div>` : ''}
+      <div id="timer-area"></div>
+      <div class="options-grid" id="options-grid">${optHTML}</div>
+      ${voted
+        ? `<p class="voted-msg">✅ Your vote has been recorded!</p>`
+        : votingOpen
+          ? `<button class="submit-btn" id="submit-vote-btn" disabled onclick="submitVote()">Submit Vote</button>`
+          : `<div class="vote-closed-banner">⏱️ Voting is closed for this question</div>`
+      }
+    </div>
+    ${(currentQIndex < totalActive-1) ? `<button class="next-btn" onclick="goNextQ()">Next Question →</button>` : ''}
+  `;
+
+  window._selectedOpt = null;
+  if(!voted && votingOpen) {
+    document.querySelectorAll('.option-btn:not([disabled])').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('selected'));
+        this.classList.add('selected');
+        window._selectedOpt = this.querySelector('span > span').textContent;
+        const sb = document.getElementById('submit-vote-btn');
+        if(sb) sb.disabled = false;
+      });
+    });
+    if(!timerInterval) startTimer(q, timerDur);
+  } else if(!voted) {
+    // voting closed but user hasn't voted — just show locked state, no timer
+  }
+}
+
+function startTimer(q, duration) {
+  timerSeconds = duration;
+  votingOpen = true;
+  renderTimerUI(timerSeconds, duration);
+
+  timerInterval = setInterval(() => {
+    timerSeconds--;
+    renderTimerUI(timerSeconds, duration);
+    if(timerSeconds <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      votingOpen = false;
+      onTimerEnd(q);
+    }
+  }, 1000);
+}
+
+function renderTimerUI(sec, total) {
+  const area = document.getElementById('timer-area');
+  if(!area) return;
+  const urgent = sec <= 5;
+  const radius = 16;
+  const circ = 2 * Math.PI * radius;
+  const offset = circ - (sec / total) * circ;
+  area.innerHTML = `
+    <div class="timer-wrap ${urgent?'urgent':''}" style="margin-bottom:1rem">
+      <div class="timer-ring">
+        <svg width="44" height="44" viewBox="0 0 44 44">
+          <circle cx="22" cy="22" r="${radius}"></circle>
+          <circle class="progress" cx="22" cy="22" r="${radius}"
+            stroke-dasharray="${circ}" stroke-dashoffset="${offset}"></circle>
+        </svg>
+      </div>
+      <span class="timer-label">${urgent ? '⚠️ Hurry!' : '⏱️ Time left'}</span>
+      <span class="timer-count">${sec}</span>
+    </div>`;
+}
+
+function onTimerEnd(q) {
+  // disable options, hide submit button
+  const area = document.getElementById('timer-area');
+  if(area) area.innerHTML = '';
+  document.querySelectorAll('.option-btn').forEach(b=>{b.disabled=true; b.classList.add('voted');});
+  const sb = document.getElementById('submit-vote-btn');
+  if(sb) sb.style.display='none';
+  const grid = document.getElementById('options-grid');
+  if(grid) {
+    const closed = document.createElement('div');
+    closed.className = 'vote-closed-banner';
+    closed.textContent = '⏱️ Time\'s up! Voting closed.';
+    grid.after(closed);
+  }
+  // Start floating bar animation then show results
+  setTimeout(() => showResultAnimation(q), 800);
+}
+
+function showResultAnimation(q) {
+  const votes = state.votes[q.id]||{};
+  const total = Object.values(votes).reduce((a,b)=>a+b,0);
+  const overlay = document.getElementById('result-overlay');
+  const floatBar = document.getElementById('floating-bar');
+  const resultBars = document.getElementById('result-bars');
+  const resultTitle = document.getElementById('result-title');
+  const resultSubtitle = document.getElementById('result-subtitle');
+  const winnerWrap = document.getElementById('result-winner-wrap');
+
+  resultTitle.textContent = q.text;
+  resultSubtitle.textContent = q.subtitle || '';
+  resultBars.innerHTML = '';
+  winnerWrap.innerHTML = '';
+
+  // Phase 1: show floating bar going up and down (2.5s)
+  overlay.classList.remove('hidden');
+  floatBar.textContent = '📊 Counting votes...';
+
+  let floatMsgs = ['📊 Counting votes...','🗳️ Tallying results...','✨ Almost there...'];
+  let fi = 0;
+  const floatInt = setInterval(() => {
+    fi++; if(fi < floatMsgs.length) floatBar.textContent = floatMsgs[fi];
+  }, 800);
+
+  // Phase 2: after 2.5s show the bars
+  setTimeout(() => {
+    clearInterval(floatInt);
+    document.getElementById('result-floating-wrap').style.display='none';
+
+    const sorted = [...q.options].sort((a,b)=>(votes[b]||0)-(votes[a]||0));
+    resultBars.innerHTML = sorted.map((opt,i) => {
+      const cnt = votes[opt]||0;
+      const pct = total>0 ? Math.round(cnt/total*100) : 0;
+      const color = COLORS[q.options.indexOf(opt)%COLORS.length];
+      return `<div class="r-bar-item">
+        <div class="r-bar-label"><span>${opt}</span><span style="color:var(--muted)">${cnt} vote${cnt!==1?'s':''}</span></div>
+        <div class="r-bar-track"><div class="r-bar-fill" id="rfill-${i}" style="background:${color}"></div></div>
+      </div>`;
+    }).join('');
+
+    // animate bars in
+    setTimeout(() => {
+      sorted.forEach((opt,i) => {
+        const cnt = votes[opt]||0;
+        const pct = total>0 ? Math.round(cnt/total*100) : 0;
+        const el = document.getElementById('rfill-'+i);
+        if(el) el.style.width = pct+'%';
+      });
+    }, 50);
+
+    // winner
+    const winner = findWinner(q, votes);
+    if(winner) {
+      const s = state.students.find(s=>s.name===winner.opt);
+      const initials = winner.opt.split(' ').map(x=>x[0]).join('').toUpperCase().substring(0,2);
+      const avatarHTML = s&&s.photo ? `<img src="${s.photo}" style="width:44px;height:44px;border-radius:50%;object-fit:cover" alt="${winner.opt}" onerror="this.style.display='none'">` : `<span style="font-size:22px;font-weight:700;color:var(--gold)">${initials}</span>`;
+      winnerWrap.innerHTML = `<div class="result-winner-row">
+        <div style="width:44px;height:44px;border-radius:50%;background:rgba(245,158,11,0.2);border:2px solid rgba(245,158,11,0.5);display:flex;align-items:center;justify-content:center;flex-shrink:0">${avatarHTML}</div>
+        <div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--gold);text-transform:uppercase">🏆 Winner</div>
+          <div style="font-size:18px;font-weight:800;color:var(--gold)">${winner.opt}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:1px">${winner.count} votes · ${Math.round(winner.count/total*100)}% of votes</div>
+        </div>
+      </div>`;
+    }
+  }, 2500);
+}
+
+function closeResult() {
+  document.getElementById('result-overlay').classList.add('hidden');
+  document.getElementById('result-floating-wrap').style.display='';
+  document.getElementById('result-floating-wrap').style.display = 'block'; // reset
+  // Re-render vote to show latest state (locked)
+  renderVote();
+}
+
+function goToQ(idx) {
+  if(timerInterval) { clearInterval(timerInterval); timerInterval=null; votingOpen=false; }
+  currentQIndex = idx;
+  renderVote();
+  // restart timer only if they haven't voted
+  const activeQs = getActiveQs();
+  const q = activeQs[idx];
+  if(q && !getUserVote(q.id)) {
+    const dur = q.timerDuration||15;
+    startTimer(q, dur);
+  }
+}
+
+function goNextQ() {
+  const activeQs = getActiveQs();
+  if(currentQIndex < activeQs.length-1) {
+    if(timerInterval) { clearInterval(timerInterval); timerInterval=null; votingOpen=false; }
+    currentQIndex++;
+    renderVote();
+    const q = activeQs[currentQIndex];
+    if(q && !getUserVote(q.id)) {
+      startTimer(q, q.timerDuration||15);
+    }
+  }
+}
+
+function selectOpt(opt) { window._selectedOpt = opt; }
+
+async function submitVote() {
+  const activeQs = getActiveQs();
+  const q = activeQs[currentQIndex];
+  if(!q || !window._selectedOpt) return;
+  if(!state.votes[q.id]) state.votes[q.id]={};
+  state.votes[q.id][window._selectedOpt] = (state.votes[q.id][window._selectedOpt]||0)+1;
+  setUserVote(q.id, window._selectedOpt);
+  await saveState();
+  if(timerInterval) { clearInterval(timerInterval); timerInterval=null; votingOpen=false; }
+  renderVote();
+}
+
+/* ─── LIVE ─── */
+function renderLiveInit() {
+  const sel = document.getElementById('live-q-select');
+  sel.innerHTML = state.questions.length
+    ? state.questions.map((q,i)=>`<option value="${i}">${q.text.substring(0,40)}${q.text.length>40?'…':''}</option>`).join('')
+    : '<option>No questions yet</option>';
+  renderLive();
+}
+
+function renderLive() {
+  const sel = document.getElementById('live-q-select');
+  const cont = document.getElementById('live-content');
+  if(!state.questions.length) { cont.innerHTML='<p style="color:var(--muted);text-align:center;padding:2rem">No questions added yet.</p>'; return; }
+  const idx = parseInt(sel.value)||0;
+  const q = state.questions[idx];
+  if(!q) return;
+  const votes = state.votes[q.id]||{};
+  const total = Object.values(votes).reduce((a,b)=>a+b,0);
+  const winner = findWinner(q, votes);
+  const sorted = [...q.options].sort((a,b)=>(votes[b]||0)-(votes[a]||0));
+
+  let bars = sorted.map((opt,i)=>{
+    const cnt = votes[opt]||0;
+    const pct = total>0 ? Math.round(cnt/total*100) : 0;
+    const color = COLORS[q.options.indexOf(opt)%COLORS.length];
+    return `<div class="bar-item">
+      <div class="bar-label" title="${opt}">${opt}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}">${pct>8?pct+'%':''}</div></div>
+      <span class="bar-count">${cnt} vote${cnt!==1?'s':''}</span>
+    </div>`;
+  }).join('');
+
+  let winnerHTML = '';
+  if(winner) {
+    const s = state.students.find(s=>s.name===winner.opt);
+    const initials = winner.opt.split(' ').map(x=>x[0]).join('').toUpperCase().substring(0,2);
+    const avatarHTML = s&&s.photo
+      ? `<div class="winner-avatar"><img src="${s.photo}" alt="${winner.opt}" onerror="this.parentElement.textContent='${initials}'"/></div>`
+      : `<div class="winner-avatar">${initials}</div>`;
+    winnerHTML = `<div class="winner-section">
+      <div class="winner-label">🏆 Current Winner</div>
+      <div class="winner-card">${avatarHTML}
+        <div class="winner-info">
+          <h3>${winner.opt}</h3>
+          <p>${total} total votes cast</p>
+          <div class="winner-votes">${winner.count} votes · ${Math.round(winner.count/total*100)}% of the class agrees</div>
+        </div>
+      </div></div>`;
+  }
+
+  cont.innerHTML = `<div class="chart-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+      <span class="q-label" style="font-size:12px">${q.active?'<span class="active-dot"></span>Live':'<span class="inactive-dot"></span>Closed'}</span>
+      <span class="total-badge">🗳️ ${total} vote${total!==1?'s':''}</span>
+    </div>
+    <p class="chart-q-title">${q.text}</p>
+    ${q.subtitle ? `<p style="font-size:12px;color:var(--muted);margin-bottom:0.75rem;font-style:italic">${q.subtitle}</p>` : ''}
+    <div class="bar-list">${bars}</div>
+    ${winnerHTML}
+  </div>
+  <p class="refresh-hint">Refresh this tab to see latest votes</p>`;
+}
+
+function findWinner(q, votes) {
+  const total = Object.values(votes).reduce((a,b)=>a+b,0);
+  if(!total) return null;
+  let best=null, bestCount=0;
+  q.options.forEach(opt => { const c=votes[opt]||0; if(c>bestCount){bestCount=c;best=opt;} });
+  return best ? { opt:best, count:bestCount } : null;
+}
+
+/* ─── ADMIN ─── */
+function doLogin() {
+  const pw = document.getElementById('pw-input').value;
+  if(pw===(state.settings?.password||'hsc2026')) {
+    loggedIn=true;
+    document.getElementById('admin-login-wrap').classList.add('hidden');
+    document.getElementById('admin-panel-wrap').classList.remove('hidden');
+    renderAdmin();
+  } else { document.getElementById('login-err').style.display='block'; }
+}
+function doLogout() {
+  loggedIn=false;
+  document.getElementById('admin-login-wrap').classList.remove('hidden');
+  document.getElementById('admin-panel-wrap').classList.add('hidden');
+  document.getElementById('pw-input').value='';
+  document.getElementById('login-err').style.display='none';
+}
+function showAdminSection(s) {
+  document.querySelectorAll('.admin-section').forEach(el=>el.classList.add('hidden'));
+  document.getElementById('admin-'+s).classList.remove('hidden');
+  document.querySelectorAll('.sec-tab').forEach((t,i)=>t.classList.toggle('active',['questions','students','settings'][i]===s));
+}
+function renderAdmin() { renderQList(); renderStudentAdmin(); if(!document.getElementById('options-container').children.length){optionCount=0;['Option A','Option B'].forEach(()=>addOptionField());} }
+function addOptionField() {
+  optionCount++;
+  const id='opt-'+optionCount;
+  const row=document.createElement('div'); row.className='opt-row'; row.id='row-'+id;
+  row.innerHTML=`<input type="text" id="${id}" placeholder="Option ${optionCount}"/><button class="del-btn" onclick="removeOpt('row-${id}')">×</button>`;
+  document.getElementById('options-container').appendChild(row);
+}
+function removeOpt(rowId) { const el=document.getElementById(rowId); if(el) el.remove(); }
+async function saveQuestion() {
+  const text = document.getElementById('new-q-text').value.trim();
+  if(!text) return alert('Please enter a question');
+  const opts = [...document.querySelectorAll('#options-container input')].map(i=>i.value.trim()).filter(Boolean);
+  if(opts.length<2) return alert('Add at least 2 options');
+  const subtitle = document.getElementById('new-q-subtitle').value.trim();
+  const timerDur = parseInt(document.getElementById('new-q-timer').value)||15;
+  const q = { id:Date.now().toString(), text, subtitle, timerDuration:timerDur, options:opts, active:false };
+  state.questions.push(q);
+  await saveState();
+  document.getElementById('new-q-text').value='';
+  document.getElementById('new-q-subtitle').value='';
+  document.getElementById('options-container').innerHTML='';
+  optionCount=0; addOptionField(); addOptionField();
+  renderQList();
+}
+function renderQList() {
+  const cont = document.getElementById('q-list');
+  if(!state.questions.length) { cont.innerHTML='<p style="color:var(--muted);font-size:13px">No questions yet.</p>'; return; }
+  cont.innerHTML = state.questions.map((q,i)=>{
+    const votes=state.votes[q.id]||{};
+    const total=Object.values(votes).reduce((a,b)=>a+b,0);
+    return `<div class="q-list-item">
+      <div class="q-item-text">
+        <span class="${q.active?'badge-active':'badge-inactive'} status-badge">${q.active?'● Active':'○ Inactive'}</span>
+        <div style="margin-top:6px;font-weight:600">${q.text}</div>
+        ${q.subtitle ? `<div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:2px">${q.subtitle}</div>` : ''}
+        <div class="q-item-meta">${q.options.join(' · ')} &nbsp;|&nbsp; ${total} votes &nbsp;|&nbsp; ⏱️ ${q.timerDuration||15}s</div>
+      </div>
+      <div class="q-actions">
+        <button class="action-btn ${q.active?'btn-danger':'btn-success'}" style="font-size:11px;padding:5px 10px" onclick="toggleActive(${i})">${q.active?'Deactivate':'Activate'}</button>
+        <button class="action-btn btn-danger" style="font-size:11px;padding:5px 10px" onclick="deleteQ(${i})">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function toggleActive(i) {
+  state.questions.forEach(q=>q.active=false);
+  state.questions[i].active = !state.questions[i].active; // toggling; re-read original
+  // Actually: just set the one
+  const wasActive = state.questions[i].active;
+  state.questions.forEach(q=>q.active=false);
+  if(!wasActive) {} else { state.questions[i].active=true; }
+  // Simpler: flip only this one, others off
+  const prevActive = !state.questions[i].active;
+  state.questions.forEach(q=>q.active=false);
+  if(prevActive) state.questions[i].active=true;
+  await saveState(); renderQList();
+}
+async function deleteQ(i) {
+  if(!confirm('Delete this question and its votes?')) return;
+  const qid=state.questions[i].id; state.questions.splice(i,1); delete state.votes[qid];
+  await saveState(); renderQList();
+}
+async function saveStudent() {
+  const name=document.getElementById('new-s-name').value.trim();
+  const photo=document.getElementById('new-s-photo').value.trim();
+  if(!name) return alert('Enter student name');
+  state.students.push({name,photo}); await saveState();
+  document.getElementById('new-s-name').value=''; document.getElementById('new-s-photo').value='';
+  renderStudentAdmin();
+}
+function renderStudentAdmin() {
+  const g=document.getElementById('student-grid-admin');
+  if(!state.students.length){g.innerHTML='<p style="color:var(--muted);font-size:13px">No students added yet.</p>';return;}
+  g.innerHTML=state.students.map((s,i)=>{
+    const initials=s.name.split(' ').map(x=>x[0]).join('').toUpperCase().substring(0,2);
+    const img=s.photo?`<img src="${s.photo}" class="student-thumb" alt="${s.name}" onerror="this.style.display='none'">`:`<div class="student-thumb" style="display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;background:var(--accent3);color:var(--accent)">${initials}</div>`;
+    return `<div class="student-item">${img}<div class="student-name">${s.name}</div><div class="del-student" onclick="deleteStudent(${i})">✕ remove</div></div>`;
+  }).join('');
+}
+async function deleteStudent(i){state.students.splice(i,1);await saveState();renderStudentAdmin();}
+async function changePassword(){const pw=document.getElementById('new-pw').value.trim();if(!pw)return alert('Enter a password');if(!state.settings)state.settings={};state.settings.password=pw;await saveState();document.getElementById('new-pw').value='';alert('Password updated!');}
+async function clearAllVotes(){if(!confirm('Clear ALL votes?'))return;state.votes={};await saveState();renderQList();alert('All votes cleared.');}
+async function clearAllData(){if(!confirm('RESET EVERYTHING?'))return;state={questions:[],students:[],votes:{},settings:{password:state.settings?.password||'hsc2026'}};await saveState();renderAdmin();alert('Reset complete.');}
+
+async function init() {
+  await loadState();
+  // fix toggleActive logic cleanly
+  renderVote();
+}
+init();
+
+// Fix toggleActive properly
+async function toggleActive(i) {
+  const wasActive = state.questions[i].active;
+  state.questions.forEach(q=>q.active=false);
+  if(!wasActive) state.questions[i].active=true;
+  await saveState();
+  renderQList();
+  // Also reset timer state since active question changed
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+  votingOpen=false; currentQIndex=0;
+}
+</script>
+</body>
+</html>
